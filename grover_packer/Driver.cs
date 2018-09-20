@@ -230,12 +230,17 @@ namespace grover_packer
 
     class Driver
     {
-     
-
         static void Main(string[] args)
         {
             PackerProblem packer_problem = new PackerProblem();
             packer_problem.read_packer_problem_file("test.input");
+
+            using( var sim = new QuantumSimulator( true ) ) {
+                
+            }
+
+            Console.WriteLine("--- Press any key to complete program execution. ---");
+            Console.ReadKey();
         }
     }
 }
