@@ -25,8 +25,14 @@ namespace grover_packer
     /// all functions needed to read and parse input and to provide output.
     class PackerProblem
     {
-   /// @brief The list of rotamers, indexed as (seqpos, rotindex).
+        /// @brief The list of all packable sequence positions.
+        private List< int > packable_sequence_positions_;
+
+        /// @brief The list of rotamers, indexed as (seqpos, rotindex).
         private SortedDictionary< Tuple< int, int >, Rotamer> rotamer_list_;
+
+        /// @brief The list of twobody energies, indexed as (seqpos1, rotindex1),(seqpos2, rotindex2);
+        private SortedDictionary< Tuple< Tuple<int, int>, Tuple< int, int > >, double > twobody_energies_;
 
         private void parse_rotamers_and_onebody_energies( List<string> all_lines, string filename ) {
             bool in_field = false;
@@ -65,6 +71,10 @@ namespace grover_packer
                         throw new FormatException( "In file \"" + filename + "\", seqpos " + seqpos.ToString() + ", rotamer " + rotno.ToString() + " was specfified more than once." );
                     }
                     rotamer_list_.Add( coord, newrot );
+
+                    if(!packable_sequence_positions_.Contains(seqpos)) {
+                        packable_sequence_positions_.Add(seqpos);
+                    }
                 } else {
                     if( all_lines[i].TrimEnd(charSeparators) == "[BEGIN ONEBODY SEQPOS/ROTINDEX/ENERGY]" ) {
                         in_field = true;
@@ -79,11 +89,23 @@ namespace grover_packer
                 Rotamer rotamer = kvp.Value;
                 Console.WriteLine( "\tSeqpos " + rotamer.SeqPos.ToString() + "\tRotamer " + rotamer.RotIndex.ToString() + "\tEnergy " + rotamer.OneBodyEnergy.ToString() );
             }
+            Console.Write( "The packable sequence positions are: " );
+            int count = 0;
+            foreach( int seqpos in packable_sequence_positions_ ) {
+                ++count;
+                Console.Write( seqpos.ToString() );
+                if( count < packable_sequence_positions_.Count ) {
+                    Console.Write( ", ");
+                }
+            }
+            Console.Write("\n");
         }
 
         /// @brief Parse an array of strings and set up variables describing this packer problem.
         void do_parse( List< string > all_lines, string filename ) {
             rotamer_list_ = new SortedDictionary< Tuple< int, int >, Rotamer>();
+            packable_sequence_positions_ = new List<int>();
+            twobody_energies_ = new SortedDictionary< Tuple< Tuple<int, int>, Tuple<int, int> >, double > ();
             parse_rotamers_and_onebody_energies( all_lines, filename );
             //parse_twobody_energies( all_lines );
         }
