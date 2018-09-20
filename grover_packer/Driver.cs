@@ -28,6 +28,9 @@ namespace grover_packer
         /// @brief The list of all packable sequence positions.
         private List< int > packable_sequence_positions_;
 
+        /// @brief The rotamer indices at all packable sequence positions.
+        private SortedDictionary< int, List<int> > rotamer_indices_at_packable_positions_;
+
         /// @brief The list of rotamers, indexed as (seqpos, rotindex).
         private SortedDictionary< Tuple< int, int >, Rotamer> rotamer_list_;
 
@@ -72,6 +75,20 @@ namespace grover_packer
 
                     if(!packable_sequence_positions_.Contains(seqpos)) {
                         packable_sequence_positions_.Add(seqpos);
+                        if( rotamer_indices_at_packable_positions_.ContainsKey( seqpos ) ) {
+                            throw new InvalidProgramException( "Program error!  The rotamer_indices_at_packable_positions_ map contains a key that is NOT found in the packable_seqence_positions_ list!" );
+                        }
+                        List<int> newlist = new List<int>();
+                        newlist.Add(rotno);
+                        rotamer_indices_at_packable_positions_.Add( seqpos, newlist );
+                    } else {
+                        if( !rotamer_indices_at_packable_positions_.ContainsKey( seqpos ) ) {
+                            throw new InvalidProgramException( "Program error!  The rotamer_indices_at_packable_positions_ map lacks a key that IS found in the packable_seqence_positions_ list!" );
+                        }
+                        if( rotamer_indices_at_packable_positions_.GetValueOrDefault( seqpos ).Contains(rotno) ) {
+                            throw new InvalidProgramException( "Program error!  The rotamer_indices_at_packable_positions_ map's rotamer list for position " + seqpos.ToString() + " contains a duplicate entry for rotamer " + rotno.ToString() + "!" );
+                        }
+                        rotamer_indices_at_packable_positions_.GetValueOrDefault( seqpos ).Add(rotno);
                     }
                 } else {
                     if( all_lines[i].TrimEnd(charSeparators) == "[BEGIN ONEBODY SEQPOS/ROTINDEX/ENERGY]" ) {
@@ -101,6 +118,18 @@ namespace grover_packer
                 }
             }
             Console.Write("\n");
+            foreach( KeyValuePair<int, List<int> > kvp in rotamer_indices_at_packable_positions_ ) {
+                Console.Write( "\tThe rotamers at packable position " + kvp.Key.ToString() + " are: " );
+                count=0;
+                foreach( int rotno in kvp.Value ) {
+                    ++count;
+                    Console.Write( rotno.ToString() );
+                    if( count < kvp.Value.Count ) {
+                        Console.Write(", ");
+                    }
+                }
+                Console.Write("\n");
+            }
         }
 
         /// @brief Given strings corresponding to lines of an input file, parse out the twobody energies and populate the
@@ -172,6 +201,7 @@ namespace grover_packer
         /// @brief Parse an array of strings and set up variables describing this packer problem.
         void do_parse( List< string > all_lines, string filename ) {
             rotamer_list_ = new SortedDictionary< Tuple< int, int >, Rotamer>();
+            rotamer_indices_at_packable_positions_ = new SortedDictionary< int, List<int> >();
             packable_sequence_positions_ = new List<int>();
             twobody_energies_ = new SortedDictionary< Tuple< Tuple<int, int>, Tuple<int, int> >, double > ();
             parse_rotamers_and_onebody_energies( all_lines, filename );
@@ -190,7 +220,11 @@ namespace grover_packer
                 }
             }
             do_parse( all_lines, filename );
-            Console.WriteLine("Completed read from \"" + filename + "\".");
+            int numsolutions = 1;
+            foreach( KeyValuePair<int, List<int> > kvp in rotamer_indices_at_packable_positions_ ) {
+                numsolutions *= kvp.Value.Count;
+            }
+            Console.WriteLine("Completed read from \"" + filename + "\".  This packer problem has " + numsolutions.ToString() + " possible solutions.");
         }
     } //class PackerProblem
 
