@@ -36,13 +36,11 @@ namespace grover_packer
 
         private void parse_rotamers_and_onebody_energies( List<string> all_lines, string filename ) {
             bool in_field = false;
-            bool breaktime = false;
             char[] charSeparators = new char[] {' ', '\t', '\n'};
 
             for( int i=0; i<all_lines.Count; ++i ) {
                 if( in_field ) {
                     if( all_lines[i].TrimEnd(charSeparators) == "[END ONEBODY SEQPOS/ROTINDEX/ENERGY]" ) {
-                        breaktime = true;
                         break;
                     }
                     string[] split_string = all_lines[i].Split( charSeparators, StringSplitOptions.RemoveEmptyEntries );
@@ -81,8 +79,12 @@ namespace grover_packer
                     }
                     continue;
                 }
-                if( breaktime ) break;
             }
+
+            if( !in_field ) {
+                throw new FormatException( "In file \"" + filename + "\", no \"[BEGIN ONEBODY...\" block was found." );
+            }
+
             Console.WriteLine("Successfully read " + rotamer_list_.Count.ToString() + " rotamers and one-body energies from \"" + filename + "\".");
             Console.WriteLine("Rotamers read:");
             foreach( KeyValuePair< Tuple<int, int>, Rotamer> kvp in rotamer_list_ ) {
@@ -101,13 +103,79 @@ namespace grover_packer
             Console.Write("\n");
         }
 
+        /// @brief Given strings corresponding to lines of an input file, parse out the twobody energies and populate the
+        /// appropriate objects.
+        void parse_twobody_energies( List< string > all_lines, string filename ) {
+            bool in_block = false;
+            char[] nullchars = new char[] {' ', '\t', '\n'};
+
+            for( int i = 0, imax=all_lines.Count; i<imax; ++i ) {
+                if( in_block ) {
+                    if( all_lines[i].TrimEnd(nullchars) == "[END TWOBODY SEQPOS1/ROTINDEX1/SEQPOS2/ROTINDEX2/ENERGY]" ) {
+                        break;
+                    }
+
+                    string[] split_string = all_lines[i].Split( nullchars, StringSplitOptions.RemoveEmptyEntries );
+                    if( split_string.Length != 5 ) {
+                        throw new FormatException("Could not parse line \"" + all_lines[i] + "\" in file \"" + filename + "\".");
+                    }
+                    int seqpos1, rotno1, seqpos2, rotno2;
+                    double energy2body;
+                    if( !Int32.TryParse( split_string[0], out seqpos1 )) {
+                        throw new FormatException( "Could not parse first entry in line \"" + all_lines[i] + "\" in file \"" + filename + "\" as an integer." );
+                    }
+                    if( !Int32.TryParse( split_string[1], out rotno1 ) ) {
+                        throw new FormatException( "Could not parse second entry in line \"" + all_lines[i] + "\" in file \"" + filename + "\" as an integer." );
+                    }
+                    if( !Int32.TryParse( split_string[2], out seqpos2 )) {
+                        throw new FormatException( "Could not parse third entry in line \"" + all_lines[i] + "\" in file \"" + filename + "\" as an integer." );
+                    }
+                    if( !Int32.TryParse( split_string[3], out rotno2 ) ) {
+                        throw new FormatException( "Could not parse fourth entry in line \"" + all_lines[i] + "\" in file \"" + filename + "\" as an integer." );
+                    }
+                    if( !Double.TryParse( split_string[4], out energy2body ) ) {
+                        throw new FormatException( "Could not parse fifth entry in line \"" + all_lines[i] + "\" in file \"" + filename + "\" as a floating-point number." );
+                    }
+
+                    Tuple< int, int > coord1 = new Tuple<int, int>( seqpos1, rotno1 );
+                    Tuple< int, int > coord2 = new Tuple<int, int>( seqpos2, rotno2 );
+                    Tuple< Tuple<int, int>, Tuple<int, int> > coords = new Tuple< Tuple<int, int>, Tuple<int, int> >(coord1, coord2);
+
+                    if( twobody_energies_.ContainsKey( coords ) ) {
+                        throw new FormatException( "File \"" + filename + "\" contained multiple entries for the pairwise energy of seqpos " + seqpos1.ToString() + ", rotamer " + rotno1.ToString() + " and seqpos " + seqpos2.ToString() + ", rotamer " + rotno2.ToString() + "." );
+                    }
+                    twobody_energies_.Add( coords, energy2body );
+                } else {
+                    if( all_lines[i].TrimEnd(nullchars) == "[BEGIN TWOBODY SEQPOS1/ROTINDEX1/SEQPOS2/ROTINDEX2/ENERGY]" ) {
+                        in_block = true;
+                        continue;
+                    }
+                }
+            }
+
+            if( !in_block ) {
+                throw new FormatException( "In file \"" + filename + "\", no \"[BEGIN TWOBODY...\" block was found." );
+            }
+
+            Console.WriteLine("Read " + twobody_energies_.Count.ToString() + " pairwise rotamer energies.");
+            Console.WriteLine("Pairwise rotamer energies:");
+            foreach( KeyValuePair< Tuple< Tuple<int,int>, Tuple<int,int> >, double > kvp in twobody_energies_ ) {
+                int seqpos1 = kvp.Key.Item1.Item1;
+                int seqpos2 = kvp.Key.Item2.Item1;
+                int rotno1 = kvp.Key.Item1.Item2;
+                int rotno2 = kvp.Key.Item2.Item2;
+                double energy = kvp.Value;
+                Console.WriteLine("\tSeqpos1 " + seqpos1.ToString() + "\tRotno1 " + rotno1.ToString() + "\tSeqpos2 " + seqpos2.ToString() + "\tRotno2 " + rotno2.ToString() + "\tEnergy " + energy.ToString() );
+            }
+        }
+
         /// @brief Parse an array of strings and set up variables describing this packer problem.
         void do_parse( List< string > all_lines, string filename ) {
             rotamer_list_ = new SortedDictionary< Tuple< int, int >, Rotamer>();
             packable_sequence_positions_ = new List<int>();
             twobody_energies_ = new SortedDictionary< Tuple< Tuple<int, int>, Tuple<int, int> >, double > ();
             parse_rotamers_and_onebody_energies( all_lines, filename );
-            //parse_twobody_energies( all_lines );
+            parse_twobody_energies( all_lines, filename );
         }
 
         /// @brief Slurp the contents of a packer description file into an array of strings.
