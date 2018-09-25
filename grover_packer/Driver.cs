@@ -236,7 +236,7 @@ namespace grover_packer
             packer_problem.read_packer_problem_file("test.input");
 
             using( var sim = new QuantumSimulator( true ) ) {
-                
+                TestAdder.Run();
             }
 
             Console.WriteLine("--- Press any key to complete program execution. ---");
