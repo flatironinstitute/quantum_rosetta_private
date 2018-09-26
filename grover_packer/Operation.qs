@@ -39,24 +39,25 @@
     /// @brief Given an array of classical bits representing a particular state and an array of classical bits representing the energy
     /// of that state, do a controlled addition of that energy (controlled by a qubit array representing the actual superposition of
     /// states of the system) to an array of qubits representing the superposition of energies of states of the system.
-    operation SingleStateAdder ( state_bitstring: Result[], state_energy: Result[], state_qstring: Qubit[], total_energy: Qubit[] ) : ()
+    operation SingleStateAdder ( state_bitstring: Result[], state_energy: Int, state_qstring: Qubit[], total_energy: Qubit[] ) : ()
     {
         body
         {
-            //Microsoft.Quantum.Canon.Add( state_energy, total_energy );
+            let total_energy_le = LittleEndian(total_energy);
+            Microsoft.Quantum.Canon.IntegerIncrementLE( state_energy, total_energy_le );
         }
     }
 
     operation TestAdder() : ( Result[], Result[] ) {
         body {
             let state_to_add = [One; Zero];
-            let energy_to_add = [Zero; One; One; Zero];
-            mutable result_state = new Result[ Length(state_to_add) ];
-            mutable result_energy = new Result [ Length(energy_to_add) ];
-            using( curstate = Qubit[Length(state_to_add)] ) {
+            let energy_to_add = 3;
+            mutable result_state = new Result[ 2 ];
+            mutable result_energy = new Result [ 4 ];
+            using( curstate = Qubit[Length(result_state)] ) {
                 ApplyToEach( H, curstate ); //Hadamard transform on each bit, to construct the state 1/2^(N/2)*(|1> + |0>)^N
 
-                using( curenergy = Qubit[Length(energy_to_add)] ) {
+                using( curenergy = Qubit[ Length(result_energy) ] ) {
                     
                     let endstate1 = [ Zero; Zero ];
                     let endstate2 = [ Zero; Zero; Zero; Zero ];
