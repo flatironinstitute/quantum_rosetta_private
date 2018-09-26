@@ -47,12 +47,16 @@
         }
     }
 
-    operation TestAdder() : ( Result ) {
+    operation TestAdder() : ( Result[], Result[] ) {
         body {
             mutable state_to_add = [Zero; Zero];
             mutable energy_to_add = [Zero; One; One; Zero];
-            using( curstate = Qubit[2] ) {
-                using( curenergy = Qubit[4] ) {
+            mutable result_state = new Result[ Length(state_to_add) ];
+            mutable result_energy = new Result [ Length(energy_to_add) ];
+            using( curstate = Qubit[Length(state_to_add)] ) {
+                ApplyToEach( H, curstate ); //Hadamard transform on each bit, to construct the state 1/2^(N/2)*(|1> + |0>)^N
+
+                using( curenergy = Qubit[Length(energy_to_add)] ) {
                     
                     let endstate1 = [ Zero; Zero ];
                     let endstate2 = [ Zero; Zero; Zero; Zero ];
@@ -61,12 +65,19 @@
 
                     SingleStateAdder( state_to_add, energy_to_add, curstate, curenergy);
 
+                    for( i in 0 .. Length(curstate) - 1 ) {
+                        set result_state[i] = M(curstate[i]);
+                    }
+                    for( i in 0 .. Length(curenergy) - 1 ) {
+                        set result_energy[i] = M(curenergy[i]);
+                    }
+
                     //Clean up: reset all qubits to |0> :
                     MultiSet(endstate1, curstate);
                     MultiSet(endstate2, curenergy);
                 }
             }
-            return One;
+            return (result_state, result_energy);
                 
         }
     }
