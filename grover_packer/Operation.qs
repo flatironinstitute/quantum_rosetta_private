@@ -10,15 +10,15 @@
         body
         {
             AssertIntEqual(Length(desired), Length(qbits), "The two registers provided to MultiSet must be equal.");
-            //mutable current = new Result[ Length(qbits) ];
-            //for( i in 0 .. Length(qbits) - 1 ) {
-            //    set current[i] = M(qbits[i]);
-            //}
-            //for( i in 0 .. Length(desired) - 1 ) {
-            //    if( desired[i] != current[i] ) {
-            //        X(qbits[i]);
-            //    }
-            //}
+            mutable current = new Result[ Length(qbits) ];
+            for( i in 0 .. Length(qbits) - 1 ) {
+                set current[i] = M(qbits[i]);
+            }
+            for( i in 0 .. Length(desired) - 1 ) {
+                if( desired[i] != current[i] ) {
+                    X(qbits[i]);
+                }
+            }
         }
     }
 
@@ -47,22 +47,22 @@
         }
     }
 
-    operation TestAdder() : () {
+    operation TestAdder() : ( Result ) {
         body {
-                Result[] state_to_add = new Result[2] {Zero, Zero};
-                Result[] energy_to_add = new Result[]{ Zero, One, One, Zero };
-                Qubit[] curstate = new Qubit[2];
-                Qubit[] curenergy = new Qubit[4];
+                mutable state_to_add = [Zero; Zero];
+                mutable energy_to_add = [Zero; One; One; Zero];
+                mutable curstate = new Qubit[2];
+                mutable curenergy = new Qubit[4];
 
-                SingleStateAdder.Run( state_to_add, energy_to_add, curstate, curenergy);
+                SingleStateAdder( state_to_add, energy_to_add, curstate, curenergy);
 
                 //Clean up: reset all qubits to |0> :
-                Result[] endstate1 = new Result[]{ Zero, Zero };
-                Result[] endstate2 = new Result[]{ Zero, Zero, Zero, Zero };
-                MultiSet.Run(endstate1, curstate);
-                MultiSet.Run(endstate2, curenergy);
+                let endstate1 = [ Zero; Zero ];
+                let endstate2 = [ Zero; Zero; Zero; Zero ];
+                MultiSet(endstate1, curstate);
+                MultiSet(endstate2, curenergy);
 
-
+            return One;
                 
         }
     }
