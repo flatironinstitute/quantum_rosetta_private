@@ -237,7 +237,7 @@ namespace grover_packer
 
             for( int i=1; i<=10; ++i) {
                 using( var sim = new QuantumSimulator( true ) ) {
-                    (QArray< Result > output_state, QArray< Result > output_energy) = TestAdder.Run(sim).Result;
+                    (QArray< Result > output_state, Int64 output_energy) = TestAdder.Run(sim).Result;
                     Console.WriteLine( "State: " + output_state.ToString() + "\tEnergy: " + output_energy.ToString() );
                 }
             }

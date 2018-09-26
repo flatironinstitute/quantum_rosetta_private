@@ -48,7 +48,7 @@
         }
     }
 
-    operation TestAdder() : ( Result[], Result[] ) {
+    operation TestAdder() : ( Result[], Int ) {
         body {
             let state_to_add = [One; Zero];
             let energy_to_add = 3;
@@ -76,7 +76,7 @@
                     MultiSet(endstate2, curenergy);
                 }
             }
-            return (result_state, result_energy);
+            return (result_state, ResultAsInt(result_energy));
                 
         }
     }
