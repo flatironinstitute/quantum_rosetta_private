@@ -60,9 +60,7 @@
                     
                     let endstate1 = [ Zero; Zero ];
                     let endstate2 = [ Zero; Zero; Zero; Zero ];
-                    MultiSet(endstate1, curstate);
-                    MultiSet(endstate2, curenergy);
-
+                    
                     SingleStateAdder( state_to_add, energy_to_add, curstate, curenergy);
 
                     for( i in 0 .. Length(curstate) - 1 ) {
