@@ -9,7 +9,7 @@
     {
         body
         {
-            AssertIntEqual(Length(desired), Length(qbits), "The two registers provided to MultiSet must be equal.");
+            AssertIntEqual(Length(desired), Length(qbits), "Error in MultiSet operation: The two registers provided must be equal.");
             mutable current = new Result[ Length(qbits) ];
             for( i in 0 .. Length(qbits) - 1 ) {
                 set current[i] = M(qbits[i]);
@@ -36,6 +36,19 @@
     //    }
     //}
 
+    /// @brief Given an array of classical bits representing a key and an array of qbits representing a message, flip qbits whenever a classical bit
+    /// is 0.
+    operation EncodeDecode( bits: Result[], qubits: Qubit[] ) : () {
+        body {
+            AssertIntEqual( Length(bits), Length(qubits), "Error in EncodeDecode operation: The two registers provided must be equal." );
+            for( i in 0 .. Length(bits) - 1) {
+                if( bits[i] == Zero ) {
+                    X( qubits[i] );
+                }
+            }
+        }
+    }
+
     /// @brief Given an array of classical bits representing a particular state and an array of classical bits representing the energy
     /// of that state, do a controlled addition of that energy (controlled by a qubit array representing the actual superposition of
     /// states of the system) to an array of qubits representing the superposition of energies of states of the system.
@@ -43,8 +56,11 @@
     {
         body
         {
+            EncodeDecode( state_bitstring, state_qstring );
             let total_energy_le = LittleEndian(total_energy);
-            Microsoft.Quantum.Canon.IntegerIncrementLE( state_energy, total_energy_le );
+            Microsoft.Quantum.Canon.IntegerIncrementLE(state_energy, total_energy_le );
+            //(Controlled Microsoft.Quantum.Canon.IntegerIncrementLE)( state_qstring, state_energy, total_energy_le );
+            EncodeDecode( state_bitstring, state_qstring );
         }
     }
 
