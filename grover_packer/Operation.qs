@@ -49,6 +49,8 @@
 
     operation TestAdder() : ( Result[], Result[] ) {
         body {
+            let state_to_add = [One; Zero];
+            let energy_to_add = [Zero; One; One; Zero];
             mutable result_state = new Result[ Length(state_to_add) ];
             mutable result_energy = new Result [ Length(energy_to_add) ];
             using( curstate = Qubit[Length(state_to_add)] ) {
@@ -59,8 +61,6 @@
                     let endstate1 = [ Zero; Zero ];
                     let endstate2 = [ Zero; Zero; Zero; Zero ];
                     
-                    let state_to_add = [One; Zero];
-                    let energy_to_add = [Zero; One; One; Zero];
                     SingleStateAdder( state_to_add, energy_to_add, curstate, curenergy);
 
                     for( i in 0 .. Length(curstate) - 1 ) {
