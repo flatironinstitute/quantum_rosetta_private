@@ -49,19 +49,23 @@
 
     operation TestAdder() : ( Result ) {
         body {
-                mutable state_to_add = [Zero; Zero];
-                mutable energy_to_add = [Zero; One; One; Zero];
-                mutable curstate = new Qubit[2];
-                mutable curenergy = new Qubit[4];
+            mutable state_to_add = [Zero; Zero];
+            mutable energy_to_add = [Zero; One; One; Zero];
+            using( curstate = Qubit[2] ) {
+                using( curenergy = Qubit[4] ) {
+                    
+                    let endstate1 = [ Zero; Zero ];
+                    let endstate2 = [ Zero; Zero; Zero; Zero ];
+                    MultiSet(endstate1, curstate);
+                    MultiSet(endstate2, curenergy);
 
-                SingleStateAdder( state_to_add, energy_to_add, curstate, curenergy);
+                    SingleStateAdder( state_to_add, energy_to_add, curstate, curenergy);
 
-                //Clean up: reset all qubits to |0> :
-                let endstate1 = [ Zero; Zero ];
-                let endstate2 = [ Zero; Zero; Zero; Zero ];
-                MultiSet(endstate1, curstate);
-                MultiSet(endstate2, curenergy);
-
+                    //Clean up: reset all qubits to |0> :
+                    MultiSet(endstate1, curstate);
+                    MultiSet(endstate2, curenergy);
+                }
+            }
             return One;
                 
         }
